@@ -1,0 +1,41 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Without this, Netlify serves real files only — the login page (/) works,
+# but refreshing on /students or sharing a direct link to /finance/ledger/x
+# 404s, because there's no actual file at that path; React Router only
+# handles it client-side once index.html has already loaded. This rewrites
+# every unmatched path back to index.html so the app's own router takes it
+# from there.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# --- Security and caching headers ---------------------------------------------------------------
+# The Content-Security-Policy below allows the app to talk to a backend hosted on onrender.com and to
+# show uploaded images from the backend or Supabase Storage. If you host the backend somewhere else
+# (or on your own domain), add that origin to connect-src and img-src, otherwise the browser will
+# block the requests. Fonts come from Google Fonts.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.onrender.com https://*.supabase.co; connect-src 'self' https://*.onrender.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "same-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# Built files have content hashes in their names, so they can be cached for a year.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# The page shell must always be re-checked so a new deploy is picked up straight away.
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"

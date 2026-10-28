@@ -1,0 +1,56 @@
+services:
+  - type: web
+    name: kgss-backend
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt -r requirements-prod.txt"
+    # --workers 1 matters here, not just for cost: the period-reminder
+    # scheduler (app/utils/period_reminders.py) runs inside this same
+    # process. More than one gunicorn worker would mean more than one
+    # scheduler, and every teacher/student would get the same "period
+    # starting soon" notification duplicated once per worker. If you need
+    # more capacity later, scale by adding a second Render *instance*
+    # (not more gunicorn workers) and set SCHEDULER_ENABLED=0 on all but
+    # one of them.
+    startCommand: "gunicorn --workers 1 --bind 0.0.0.0:$PORT run:app"
+    healthCheckPath: /api/health
+    envVars:
+      # The Postgres driver in requirements-prod.txt has ready-made builds for Python up to 3.12.
+      # Everything here was tested on 3.12, so keep Render on it.
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      # Render terminates HTTPS in front of the app; this makes the real client IP (not the proxy's)
+      # reach the rate limiter and the activity log. 1 = exactly one trusted proxy hop.
+      - key: TRUST_PROXY_COUNT
+        value: "1"
+      - key: UPLOAD_S3_ENDPOINT
+        sync: false
+      - key: UPLOAD_S3_BUCKET
+        sync: false
+      - key: UPLOAD_S3_ACCESS_KEY
+        sync: false
+      - key: UPLOAD_S3_SECRET_KEY
+        sync: false
+      - key: UPLOAD_S3_REGION
+        sync: false
+      - key: UPLOAD_PUBLIC_BASE_URL
+        sync: false
+      # Optional demo school. Set SEED_DEMO_ON_BOOT to 1 and DEMO_PASSWORD to a private password and the
+      # first start loads the demo school (only into a database that has no school yet). Remove
+      # SEED_DEMO_ON_BOOT after it has finished.
+      - key: SEED_DEMO_ON_BOOT
+        sync: false
+      - key: DEMO_PASSWORD
+        sync: false
+      - key: SCHEDULER_ENABLED
+        value: "1"

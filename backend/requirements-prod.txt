@@ -1,0 +1,5 @@
+# Only needed when deploying with Postgres / Supabase Storage.
+# Install with: py -m pip install -r requirements-prod.txt
+psycopg2-binary==2.9.9
+boto3==1.34.162
+# pyodbc is only for real SQL Server: pip install pyodbc==5.1.0
