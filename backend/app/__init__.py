@@ -69,12 +69,15 @@ def create_app(config_name=None):
                 from app.utils.demo_boot import seed_demo_in_background
                 seed_demo_in_background(app)
         except Exception as exc:
-            # Tables may not exist yet on a brand-new database before the
-            # first `db.create_all()` / seed run, that's fine, seed.py
-            # will call these directly the first time. Anything else is
-            # logged so a failed migration is never silent.
+            # The database could not be prepared (wrong DATABASE_URL, wrong password, project paused...).
+            # The server still starts so the host can show its logs, but nothing will work, so say so loudly.
             import logging
-            logging.getLogger(__name__).warning("Startup schema/role sync skipped: %s", exc)
+            first_line = (str(exc).splitlines() or [repr(exc)])[0]
+            logging.getLogger(__name__).error(
+                "DATABASE NOT READY: the site will return errors until this is fixed. Cause: %s | "
+                "Check DATABASE_URL: with the Supabase pooler the username must be postgres.<project-ref> (not "
+                "just postgres) and the password must NOT be wrapped in [square brackets]. "
+                "Run: py preflight.py --env-file .env.production", first_line)
 
     # Background job: ping a teacher and their students'/guardians' about
     # to a period starting in ~5 minutes. Skipped entirely under pytest

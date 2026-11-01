@@ -43,7 +43,7 @@ ignored by git, so it can never be uploaded to GitHub by accident.
 SECRET_KEY=paste-the-first-key
 JWT_SECRET_KEY=paste-the-second-key
 DATABASE_URL=
-CORS_ORIGINS=https://YOUR-SITE-NAME.netlify.app
+CORS_ORIGINS=https://sms-sl.netlify.app
 TRUST_PROXY_COUNT=1
 UPLOAD_S3_ENDPOINT=
 UPLOAD_S3_BUCKET=
@@ -54,8 +54,10 @@ UPLOAD_PUBLIC_BASE_URL=
 DEMO_PASSWORD=choose-a-private-password-for-the-demo-accounts
 ```
 
-Choose your Netlify site name now (letters, numbers and dashes, for example `kgss-sms`). Its address will be
-`https://kgss-sms.netlify.app`. Use that in `CORS_ORIGINS` (no slash at the end).
+Your site name is **`sms-sl`**, so the website's address is `https://sms-sl.netlify.app` and the backend's address is
+`https://sms-sl.onrender.com`. Use the website address in `CORS_ORIGINS` (no slash at the end). Site names on Netlify
+are shared by everyone, so if `sms-sl` turns out to be taken there, pick another and use that one in `CORS_ORIGINS`
+instead: the two must match exactly.
 
 ### 1c. Put the code on GitHub
 
@@ -87,7 +89,8 @@ Run `git status` before committing and check that `.env.production` and `dev.db`
 
    `postgresql://postgres.abcdefghijkl:[YOUR-PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:6543/postgres`
 
-   Replace `[YOUR-PASSWORD]` (square brackets included) with your password. This is your `DATABASE_URL`.
+   Replace `[YOUR-PASSWORD]` with your password. **Delete the square brackets too**: they are only a marker, and
+   leaving them around your password makes the login fail. It should read `...:YourPassword@aws-0-...`. This is your `DATABASE_URL`.
    Do **not** use the "Direct connection": Render's free tier cannot reach it.
 4. **Storage bucket.** Open **Storage**, **New bucket**, name it `school-files`, and turn **Public bucket** on.
 5. **Storage keys.** In Storage, open the **S3 connection** settings. Note the **Endpoint** and **Region** shown
@@ -123,7 +126,7 @@ Run `git status` before committing and check that `.env.production` and `dev.db`
 
    | Field | Value |
    |---|---|
-   | Name | `kgss-sms-api` (this becomes part of its address) |
+   | Name | `sms-sl` (this becomes part of its address: `https://sms-sl.onrender.com`) |
    | Region | Frankfurt (or the one nearest your Supabase region) |
    | Branch | `main` |
    | **Root Directory** | `backend` |
@@ -143,7 +146,7 @@ Run `git status` before committing and check that `.env.production` and `dev.db`
    | `FLASK_ENV` | `production` |
    | `SECRET_KEY`, `JWT_SECRET_KEY` | your two keys |
    | `DATABASE_URL` | your Supabase address |
-   | `CORS_ORIGINS` | `https://YOUR-SITE-NAME.netlify.app` (no slash at the end) |
+   | `CORS_ORIGINS` | `https://sms-sl.netlify.app` (no slash at the end) |
    | `TRUST_PROXY_COUNT` | `1` |
    | `SCHEDULER_ENABLED` | `1` |
    | the six `UPLOAD_...` values | from step 2 |
@@ -153,9 +156,9 @@ Run `git status` before committing and check that `.env.production` and `dev.db`
 5. Press **Create Web Service** and watch the **Logs**. The first build takes a few minutes. When it works you will
    see the service go **Live**, and, because of `SEED_DEMO_ON_BOOT`, lines starting `Demo data: seeding started`
    and later `seeding finished`.
-6. Copy the service's address from the top of the page (for example `https://kgss-sms-api.onrender.com`).
+6. Copy the service's address from the top of the page (yours is `https://sms-sl.onrender.com`).
    If the name was already taken it will have extra letters, so copy the real one.
-7. Open `https://YOUR-RENDER-ADDRESS/api/health/db` in a browser. You should see `"database":"ok"`.
+7. Open `https://sms-sl.onrender.com/api/health/db` in a browser. You should see `"database":"ok"`.
 
 ---
 
@@ -174,7 +177,7 @@ Run `git status` before committing and check that `.env.production` and `dev.db`
 
    | Variable | Value |
    |---|---|
-   | `VITE_API_URL` | your Render address from step 3, **no slash at the end** |
+   | `VITE_API_URL` | `https://sms-sl.onrender.com` (your Render address, **no slash at the end**) |
    | `NODE_VERSION` | `20` |
 
 4. Deploy. When it finishes, go to **Site configuration**, **Change site name**, and set it to the name you chose in
@@ -240,7 +243,7 @@ fresh Supabase project without `SEED_DEMO_ON_BOOT`.
    |---|---|
    | Monitor Type | HTTP(s) |
    | Friendly Name | `School API` |
-   | URL | `https://YOUR-RENDER-ADDRESS/api/health/db` |
+   | URL | `https://sms-sl.onrender.com/api/health/db` |
    | Monitoring Interval | 5 minutes |
    | Alert contacts | tick your email |
 
@@ -291,6 +294,7 @@ themselves. When a new version adds database columns, they are added automatical
 | What you see | Most likely cause and fix |
 |---|---|
 | Render log: "Refusing to start with an unsafe production configuration" | It names the problem: a short or default key, a missing or `*` `CORS_ORIGINS`, or a missing `DATABASE_URL`. Fix that variable. |
+| Render log: `password authentication failed for user ...` (or "Tenant or user not found"), then `DATABASE NOT READY` | Three usual causes: the username is plain `postgres` instead of `postgres.YOUR-PROJECT-REF`; the password is still wrapped in `[square brackets]`; or the password is wrong. `DATABASE_URL` must be copied whole from Supabase's Connect panel. Copy the **Transaction pooler** address again, replace `[YOUR-PASSWORD]`, and check it with `py preflight.py --env-file .env.production`. If it still fails, reset the database password (Project Settings, Database) to letters and numbers only. Render says "Live" even then, because its health check does not touch the database; `/api/health/db` does. |
 | Render build fails while installing `psycopg2` | Render is on a newer Python. Set `PYTHON_VERSION` to `3.12.8` (or any `3.12.x`). |
 | Login page shows a network or CORS error | `CORS_ORIGINS` does not exactly match your Netlify address (check `https`, spelling, no trailing slash). Or `VITE_API_URL` is wrong or has a slash; fix it and trigger a new Netlify deploy. |
 | Everything is slow, only the first time | The free server was asleep. UptimeRobot (step 7) stops this. |

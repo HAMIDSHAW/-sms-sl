@@ -62,6 +62,11 @@ def check_database():
     if "[YOUR-PASSWORD]" in raw or "YOUR-PASSWORD" in raw:
         say(FIX, "DATABASE_URL still contains [YOUR-PASSWORD]. Replace it, brackets included, with your real database password.")
         return
+    import re
+    if re.match(r"^[\w+]+://[^:/@]+:\[[^\]]*\]@", raw):
+        say(FIX, "The password in DATABASE_URL is wrapped in square brackets. Supabase's [YOUR-PASSWORD] brackets are only a marker: "
+                 "delete the brackets as well as the words, so it reads  user:YourPassword@host  with no [ ] around it.")
+        return
     if raw.count("@") > 1:
         say(FIX, "DATABASE_URL has more than one @. A password containing @ # / : ? or % must be URL-encoded "
                  "(@ becomes %40, # becomes %23, / becomes %2F, : becomes %3A). Or reset the password to letters and numbers only.")
@@ -127,7 +132,7 @@ def check_database():
 def check_cors():
     raw = os.environ.get("CORS_ORIGINS", "").strip()
     if not raw:
-        say(FIX, "CORS_ORIGINS is not set. Set it to your Netlify address, for example https://kgss.netlify.app")
+        say(FIX, "CORS_ORIGINS is not set. Set it to your Netlify address, for example https://sms-sl.netlify.app")
         return
     for origin in [o.strip() for o in raw.split(",") if o.strip()]:
         if origin == "*":
